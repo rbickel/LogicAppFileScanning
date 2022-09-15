@@ -1,0 +1,330 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Condition_if_the_file_is_clean": {
+                "actions": {
+                    "Copy_blob_(V2)_2": {
+                        "inputs": {
+                            "headers": {
+                                "ReadFileMetadataFromServer": true
+                            },
+                            "host": {
+                                "connection": {
+                                    "name": "@parameters('$connections')['azureblob_1']['connectionId']"
+                                }
+                            },
+                            "method": "post",
+                            "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('AccountNameFromSettings'))}/copyFile",
+                            "queries": {
+                                "destination": "clean/@{triggerBody()?['Path']}",
+                                "overwrite": false,
+                                "queryParametersSingleEncoded": true,
+                                "source": "@triggerBody()?['Path']"
+                            }
+                        },
+                        "runAfter": {},
+                        "type": "ApiConnection"
+                    },
+                    "Delete_blob_(V2)_4": {
+                        "inputs": {
+                            "headers": {
+                                "SkipDeleteIfFileNotFoundOnServer": false
+                            },
+                            "host": {
+                                "connection": {
+                                    "name": "@parameters('$connections')['azureblob_1']['connectionId']"
+                                }
+                            },
+                            "method": "delete",
+                            "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('AccountNameFromSettings'))}/files/@{encodeURIComponent(encodeURIComponent(triggerBody()?['Path']))}"
+                        },
+                        "runAfter": {
+                            "Copy_blob_(V2)_2": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "ApiConnection"
+                    }
+                },
+                "else": {
+                    "actions": {
+                        "Condition": {
+                            "actions": {
+                                "Copy_blob_(V2)": {
+                                    "inputs": {
+                                        "headers": {
+                                            "ReadFileMetadataFromServer": true
+                                        },
+                                        "host": {
+                                            "connection": {
+                                                "name": "@parameters('$connections')['azureblob_1']['connectionId']"
+                                            }
+                                        },
+                                        "method": "post",
+                                        "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('AccountNameFromSettings'))}/copyFile",
+                                        "queries": {
+                                            "destination": "clean/@{triggerBody()?['Path']}",
+                                            "overwrite": true,
+                                            "queryParametersSingleEncoded": true,
+                                            "source": "quarantine/@{triggerBody()?['Path']}"
+                                        }
+                                    },
+                                    "runAfter": {},
+                                    "type": "ApiConnection"
+                                },
+                                "Delete_blob_(V2)_2": {
+                                    "inputs": {
+                                        "headers": {
+                                            "SkipDeleteIfFileNotFoundOnServer": false
+                                        },
+                                        "host": {
+                                            "connection": {
+                                                "name": "@parameters('$connections')['azureblob_1']['connectionId']"
+                                            }
+                                        },
+                                        "method": "delete",
+                                        "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('AccountNameFromSettings'))}/files/@{encodeURIComponent(encodeURIComponent('quarantine/',triggerBody()?['Path']))}"
+                                    },
+                                    "runAfter": {
+                                        "Copy_blob_(V2)": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "type": "ApiConnection"
+                                }
+                            },
+                            "else": {
+                                "actions": {
+                                    "Delete_blob_(V2)_3": {
+                                        "inputs": {
+                                            "headers": {
+                                                "SkipDeleteIfFileNotFoundOnServer": false
+                                            },
+                                            "host": {
+                                                "connection": {
+                                                    "name": "@parameters('$connections')['azureblob_1']['connectionId']"
+                                                }
+                                            },
+                                            "method": "delete",
+                                            "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('AccountNameFromSettings'))}/files/@{encodeURIComponent(encodeURIComponent('quarantine/',triggerBody()?['Path']))}"
+                                        },
+                                        "runAfter": {},
+                                        "type": "ApiConnection"
+                                    }
+                                }
+                            },
+                            "expression": {
+                                "and": [
+                                    {
+                                        "not": {
+                                            "equals": [
+                                                "@body('Send_approval_email')?['SelectedOption']",
+                                                "Reject"
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            "runAfter": {
+                                "Send_approval_email": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "If"
+                        },
+                        "Copy_blob_(V2)_3": {
+                            "inputs": {
+                                "headers": {
+                                    "ReadFileMetadataFromServer": true
+                                },
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azureblob_1']['connectionId']"
+                                    }
+                                },
+                                "method": "post",
+                                "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('AccountNameFromSettings'))}/copyFile",
+                                "queries": {
+                                    "destination": "quarantine/@{triggerBody()?['Path']}",
+                                    "overwrite": true,
+                                    "queryParametersSingleEncoded": true,
+                                    "source": "@triggerBody()?['Path']"
+                                }
+                            },
+                            "runAfter": {
+                                "Send_approval_email": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ApiConnection"
+                        },
+                        "Delete_blob_(V2)": {
+                            "inputs": {
+                                "headers": {
+                                    "SkipDeleteIfFileNotFoundOnServer": false
+                                },
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azureblob_1']['connectionId']"
+                                    }
+                                },
+                                "method": "delete",
+                                "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('AccountNameFromSettings'))}/files/@{encodeURIComponent(encodeURIComponent(triggerBody()?['Path']))}"
+                            },
+                            "runAfter": {
+                                "Copy_blob_(V2)_3": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ApiConnection"
+                        },
+                        "Send_approval_email": {
+                            "inputs": {
+                                "body": {
+                                    "Message": {
+                                        "HideHTMLMessage": true,
+                                        "Importance": "Normal",
+                                        "Options": "Approve, Reject",
+                                        "ShowHTMLConfirmationDialog": false,
+                                        "Subject": "File @{triggerBody()?['DisplayName']} may contain a virus. Do you want to Reject it ?",
+                                        "To": "raphael.bickel@microsoft.com"
+                                    },
+                                    "NotificationUrl": "@{listCallbackUrl()}"
+                                },
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['office365']['connectionId']"
+                                    }
+                                },
+                                "path": "/approvalmail/$subscriptions"
+                            },
+                            "runAfter": {},
+                            "type": "ApiConnectionWebhook"
+                        }
+                    }
+                },
+                "expression": {
+                    "and": [
+                        {
+                            "equals": [
+                                "@body('Scan_a_file_for_viruses')?['CleanResult']",
+                                false
+                            ]
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Scan_a_file_for_viruses": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "If"
+            },
+            "Get_blob_content_(V2)": {
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['azureblob_1']['connectionId']"
+                        }
+                    },
+                    "method": "get",
+                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('AccountNameFromSettings'))}/files/@{encodeURIComponent(encodeURIComponent(triggerBody()?['Path']))}/content",
+                    "queries": {
+                        "inferContentType": true
+                    }
+                },
+                "runAfter": {},
+                "type": "ApiConnection"
+            },
+            "Scan_a_file_for_viruses": {
+                "inputs": {
+                    "body": {
+                        "$content-type": "multipart/form-data",
+                        "$multipart": [
+                            {
+                                "body": "@body('Get_blob_content_(V2)')",
+                                "headers": {
+                                    "Content-Disposition": "form-data; name=\"inputFile\""
+                                }
+                            }
+                        ]
+                    },
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['cloudmersive']['connectionId']"
+                        }
+                    },
+                    "method": "post",
+                    "path": "/virus/scan/file"
+                },
+                "runAfter": {
+                    "Get_blob_content_(V2)": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ApiConnection"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "parameters": {
+            "$connections": {
+                "defaultValue": {},
+                "type": "Object"
+            }
+        },
+        "triggers": {
+            "When_a_blob_is_added_or_modified_(properties_only)_(V2)": {
+                "evaluatedRecurrence": {
+                    "frequency": "Second",
+                    "interval": 10
+                },
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['azureblob_1']['connectionId']"
+                        }
+                    },
+                    "method": "get",
+                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('AccountNameFromSettings'))}/triggers/batch/onupdatedfile",
+                    "queries": {
+                        "checkBothCreatedAndModifiedDateTime": false,
+                        "folderId": "/upload",
+                        "maxFileCount": 10
+                    }
+                },
+                "metadata": {
+                    "JTJmdGVzdA==": "/test"
+                },
+                "recurrence": {
+                    "frequency": "Second",
+                    "interval": 10
+                },
+                "splitOn": "@triggerBody()",
+                "type": "ApiConnection"
+            }
+        }
+    },
+    "parameters": {
+        "$connections": {
+            "value": {
+                "azureblob_1": {
+                    "connectionId": "/subscriptions/49d4d128-18c3-4234-882e-7474a719c4ca/resourceGroups/test/providers/Microsoft.Web/connections/azureblob-4",
+                    "connectionName": "azureblob-4",
+                    "id": "/subscriptions/49d4d128-18c3-4234-882e-7474a719c4ca/providers/Microsoft.Web/locations/westeurope/managedApis/azureblob"
+                },
+                "cloudmersive": {
+                    "connectionId": "/subscriptions/49d4d128-18c3-4234-882e-7474a719c4ca/resourceGroups/test/providers/Microsoft.Web/connections/cloudmersive",
+                    "connectionName": "cloudmersive",
+                    "id": "/subscriptions/49d4d128-18c3-4234-882e-7474a719c4ca/providers/Microsoft.Web/locations/westeurope/managedApis/cloudmersive"
+                },
+                "office365": {
+                    "connectionId": "/subscriptions/49d4d128-18c3-4234-882e-7474a719c4ca/resourceGroups/test/providers/Microsoft.Web/connections/office365",
+                    "connectionName": "office365",
+                    "id": "/subscriptions/49d4d128-18c3-4234-882e-7474a719c4ca/providers/Microsoft.Web/locations/westeurope/managedApis/office365"
+                }
+            }
+        }
+    }
+}
